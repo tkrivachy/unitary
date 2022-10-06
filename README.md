@@ -8,10 +8,10 @@ Which is based on the works
 
 Ch.Spengler, M.Huber, B.C.Hiesmayr
 'A composite parameterization of unitary groups, density matrices and subspaces'
-arXiv:1004.5252 // J. Phys. A: Math. Theor. 43, 385306 (2010)
+arXiv:1004.5252 // J. Phys. A: Math. Theor. 43, 385306 (2010); https://doi.org/10.1088/1751-8113/43/38/385306
     
 Ch.Spengler, M.Huber, B.C.Hiesmayr
 'Composite parameterization and Haar measure for all unitary and special unitary groups'
-arXiv:1103.3408
+arXiv:1103.3408 // J. Math. Phys. 53, 013501 (2012); https://doi.org/10.1063/1.3672064
 
 Please cite original work(s) when using the script!!
