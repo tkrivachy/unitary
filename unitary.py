@@ -84,9 +84,19 @@ def UC_tensorflow(lambda_ = None):
     %   arXiv:1103.3408 // J. Math. Phys. 53, 013501 (2012); https://doi.org/10.1063/1.3672064
     %
     """
+
+    """
+    Maybe this?
+    https://www.tensorflow.org/api_docs/python/tf/scatter_nd
+    or
+    https://towardsdatascience.com/how-to-replace-values-by-index-in-a-tensor-with-tensorflow-2-0-510994fe6c5f
+    or it actually should be a variable... if it's varying all the time, and use the standard work-around of a class
+        ValueError: tf.function only supports singleton tf.Variables created on the first call. Make sure the tf.Variable is only created once or created outside tf.function. See https://www.tensorflow.org/guide/function#creating_tfvariables for more information.
+
+    """
     d = np.shape(lambda_)[0]
-    lambda_ = tf.cast(lambda_,tf.dtypes.complex64)
-    unitary = tf.ones((1,1), dtype=tf.dtypes.complex64)
+    lambda_ = tf.cast(lambda_,tf.complex64)
+    unitary = tf.ones((1,1), dtype=tf.complex64)
     for m in np.arange(d-1, 0,- 1).reshape(-1):
         ex1 = tf.zeros((d-m,1),dtype=tf.dtypes.complex64)
         ex2 = tf.zeros((1,d-m),dtype=tf.dtypes.complex64)
@@ -95,18 +105,21 @@ def UC_tensorflow(lambda_ = None):
         unitary = tf.concat([ex1,unitary],axis=1)
         unitary = tf.concat([ex2,unitary],axis=0)
         for n in np.arange((d-m+1),1,- 1).reshape(-1):
-            A = tf.Variable(tf.eye(d-m+1, dtype = tf.dtypes.complex64))
-            A = A[0,0].assign(tf.math.cos(lambda_[m-1,n+m-2]))
-            A = A[n-1,n-1].assign(tf.math.exp(1j * lambda_[n + m - 2,m-1]) * tf.math.cos(lambda_[m-1,n + m - 2]))
-            A = A[n-1,0].assign(-1* tf.math.exp(1j * lambda_[n + m - 2,m-1]) * tf.math.sin(lambda_[m-1,n + m - 2]))
-            A = A[0,n-1].assign(tf.math.sin(lambda_[m-1,n + m - 2]))
+            A = tf.eye(d-m+1, dtype = tf.dtypes.complex64)
+            updates = [tf.math.cos(lambda_[m-1,n+m-2]),
+                        tf.math.exp(1j * lambda_[n + m - 2,m-1]) * tf.math.cos(lambda_[m-1,n + m - 2]),
+                        -1* tf.math.exp(1j * lambda_[n + m - 2,m-1]) * tf.math.sin(lambda_[m-1,n + m - 2]),
+                        tf.math.sin(lambda_[m-1,n + m - 2])]
+            update_indices = [[0,0],[n-1,n-1],[n-1,0],[0,n-1]]
+            A = tf.tensor_scatter_nd_update(A, update_indices, updates)
             unitary = tf.linalg.matmul(A, unitary)
-    multipland = tf.Variable(tf.ones_like(unitary))
+    multipland = tf.ones_like(unitary)
     for k in np.arange(0,d).reshape(-1):
-        multipland = multipland[:,k].assign(tf.math.exp(1j * lambda_[k,k]))
+        updates = np.ones(d)*tf.math.exp(1j * lambda_[k,k])
+        update_indices = [[ind,k] for ind in range(0,d)]
+        multipland = tf.tensor_scatter_nd_update(multipland, update_indices, updates)
     unitary = tf.math.multiply(unitary,multipland)
     return unitary
-
 
 def UCS(lambda_ = None):
     """
@@ -205,23 +218,31 @@ def UCS_tensorflow(lambda_ = None):
         unitary = tf.concat([ex1,unitary],axis=1)
         unitary = tf.concat([ex2,unitary],axis=0)
         for n in np.arange((d-m+1),1,- 1).reshape(-1):
-            A = tf.Variable(tf.eye(d-m+1, dtype = tf.dtypes.complex64))
-            A = A[0,0].assign(tf.math.exp(1j * lambda_[n+m-2, m-1]) * tf.math.cos(lambda_[m-1,n + m - 2]))
-            A = A[n-1,n-1].assign(tf.math.exp(-1j * lambda_[n+m-2, m-1]) * tf.math.cos(lambda_[m-1,n + m - 2]))
-            A = A[n-1,0].assign(-1* tf.math.exp(-1j * lambda_[n+m-2, m-1]) * tf.math.sin(lambda_[m-1,n + m - 2]))
-            A = A[0,n-1].assign(tf.math.exp(1j * lambda_[n+m-2, m-1]) * tf.math.sin(lambda_[m-1,n + m - 2]))
+            A = tf.eye(d-m+1, dtype = tf.dtypes.complex64)
+            updates = [tf.math.exp(1j * lambda_[n+m-2, m-1]) * tf.math.cos(lambda_[m-1,n + m - 2]),
+                        tf.math.exp(-1j * lambda_[n+m-2, m-1]) * tf.math.cos(lambda_[m-1,n + m - 2]),
+                        -1* tf.math.exp(-1j * lambda_[n+m-2, m-1]) * tf.math.sin(lambda_[m-1,n + m - 2]),
+                        tf.math.exp(1j * lambda_[n+m-2, m-1]) * tf.math.sin(lambda_[m-1,n + m - 2])]
+            update_indices = [[0,0],[n-1,n-1],[n-1,0],[0,n-1]]
+            A = tf.tensor_scatter_nd_update(A, update_indices, updates)
             unitary = tf.linalg.matmul(A, unitary)
-    multipland = tf.Variable(tf.ones_like(unitary))
+    multipland = tf.ones_like(unitary)
+    last_column_multipland = 1
     for k in np.arange(0,d-1).reshape(-1):
-        multipland = multipland[:,k].assign(tf.math.exp(1j * lambda_[k,k]))
+        updates = np.ones(d)*tf.math.exp(1j * lambda_[k,k])
+        update_indices = [[ind,k] for ind in range(0,d)]
+        multipland = tf.tensor_scatter_nd_update(multipland, update_indices, updates)
+        last_column_multipland = last_column_multipland * tf.math.exp(-1j * lambda_[k,k])
     unitary = tf.math.multiply(unitary,multipland)
     for k in np.arange(0,d-1).reshape(-1):
-        multipland = tf.Variable(tf.ones_like(unitary))
-        multipland = multipland[:,d-1].assign(tf.math.exp(-1j * lambda_[k,k]))
+        multipland = tf.ones_like(unitary, dtype=tf.complex64)
+        updates = tf.ones((d,), dtype=tf.complex64)*tf.math.exp(-1j * lambda_[k,k])
+        update_indices = [[ind,d-1] for ind in range(0,d)]
+        multipland = tf.tensor_scatter_nd_update(multipland, update_indices, updates)
         unitary = tf.math.multiply(unitary,multipland)
     return unitary
 
-""" Testing """
+""" Testing on a few simple cases"""
 # lambda_ = np.array([[0,0],[0,0]])
 # lambda_ = np.array([[1,0,0],[1,1,1],[1,1,1]])
 # lambda_ = np.array([[1,0.5,1,0],[0.3,0.7,1,0],[1.2,1.1,0.4,0.6],[0,0,0,0.45]])
@@ -238,3 +259,4 @@ def UCS_tensorflow(lambda_ = None):
 #
 # U = UCS_tensorflow(lambda_)
 # print(U)
+
