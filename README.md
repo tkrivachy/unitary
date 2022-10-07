@@ -1,7 +1,7 @@
 # python unitary matrix parametrization
 Parametrization of (special) unitary matrices, with python packages numpy and tensorflow.
 
-Script translated from matlab files found at the following link on 30.09.2022, by Tamás Kriváchy and Flavien Hirsch.
+Script translated by Tamás Kriváchy and Flavien Hirsch from matlab files found at the following link on 30.09.2022.
 https://www.mathworks.com/matlabcentral/fileexchange/30990-composite-parameterization-of-unitary-groups
 
 Which is based on the works
