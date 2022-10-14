@@ -85,15 +85,6 @@ def UC_tensorflow(lambda_ = None):
     %
     """
 
-    """
-    Maybe this?
-    https://www.tensorflow.org/api_docs/python/tf/scatter_nd
-    or
-    https://towardsdatascience.com/how-to-replace-values-by-index-in-a-tensor-with-tensorflow-2-0-510994fe6c5f
-    or it actually should be a variable... if it's varying all the time, and use the standard work-around of a class
-        ValueError: tf.function only supports singleton tf.Variables created on the first call. Make sure the tf.Variable is only created once or created outside tf.function. See https://www.tensorflow.org/guide/function#creating_tfvariables for more information.
-
-    """
     d = np.shape(lambda_)[0]
     lambda_ = tf.cast(lambda_,tf.complex64)
     unitary = tf.ones((1,1), dtype=tf.complex64)
